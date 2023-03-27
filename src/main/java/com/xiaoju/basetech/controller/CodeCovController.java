@@ -45,15 +45,14 @@ public class CodeCovController {
         return HttpResult.success(codeCovService.getCoverResult(uuid));
     }
 
-    /**
-     *
-     * @param envCoverRequest
-     * @return
-     */
-    @RequestMapping(value = "/triggerEnvCov", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "/triggerEnvCov", method = RequestMethod.POST)
     @ResponseBody
-    public HttpResult<Boolean> triggerEnvCov(@RequestBody @Validated EnvCoverRequest envCoverRequest) {
-        codeCovService.triggerEnvCov(envCoverRequest);
+    public HttpResult<Boolean> triggerEnvCov(@RequestBody @Validated EnvCoverRequest envCoverRequest,@RequestParam(name="refresh",defaultValue = "false") boolean refresh) {
+        if(!refresh) {
+            codeCovService.triggerEnvCov(envCoverRequest);
+        }else {
+            codeCovService.triggerRefreshReport(envCoverRequest);
+        }
         return HttpResult.success();
 
     }

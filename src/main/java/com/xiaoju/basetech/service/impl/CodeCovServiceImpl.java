@@ -301,8 +301,7 @@ public class CodeCovServiceImpl implements CodeCovService {
             }
 
             coverageReport.setRequestStatus(Constants.JobStatus.WAITING.val());
-            coverageReportDao.insertCoverageReportById(coverageReport);
-            deployInfoDao.insertDeployId(envCoverRequest.getUuid(), envCoverRequest.getAddress(), envCoverRequest.getPort());
+            insertRecord(envCoverRequest, coverageReport);
             new Thread(() -> {
                 cloneAndCompileCode(coverageReport);
                 if (coverageReport.getRequestStatus() != Constants.JobStatus.COMPILE_DONE.val()) {
@@ -323,6 +322,30 @@ public class CodeCovServiceImpl implements CodeCovService {
         }
 
     }
+
+    @Override
+    public void triggerRefreshReport(EnvCoverRequest envCoverRequest) {
+        try {
+            CoverageReportEntity coverageReport = coverageReportDao.queryCoverageReportByUuid(envCoverRequest.getUuid());
+
+            new Thread(() -> {
+                calculateEnvCov(coverageReport);
+            }).start();
+        } catch (Exception e) {
+            throw new ResponseException(e.getMessage());
+        }
+
+    }
+
+    private void insertRecord(EnvCoverRequest envCoverRequest, CoverageReportEntity coverageReport) {
+
+        final CoverageReportEntity coverageReportEntity = coverageReportDao.queryCoverageReportByUuid(envCoverRequest.getUuid());
+        if(null == coverageReportEntity) {
+            coverageReportDao.insertCoverageReportById(coverageReport);
+            deployInfoDao.insertDeployId(envCoverRequest.getUuid(), envCoverRequest.getAddress(), envCoverRequest.getPort());
+        }
+    }
+
 
     /**
      * 从项目机器上拉取功能测试的执行轨迹.exec文件，计算增量方法覆盖率
